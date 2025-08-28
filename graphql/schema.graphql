@@ -1,0 +1,95 @@
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
+
+"Indicates what fields are available at the top level of a query operation."
+type Query {
+    "Find a single user by an identifying attribute."
+    user(
+      "Search by primary key."
+      id: ID @eq @rules(apply: ["prohibits:email", "required_without:email"])
+
+      "Search by email address."
+      email: String @eq @rules(apply: ["prohibits:id", "required_without:id", "email"])
+    ): User @find
+
+    "List multiple users."
+    users(
+      "Filters by name. Accepts SQL LIKE wildcards `%` and `_`."
+      name: String @where(operator: "like")
+    ): [User!]! @paginate(defaultCount: 10)
+
+    "Find a single post by an identifying attribute."
+    post(
+        "Search by primary key."
+        id: ID @eq @rules(apply: ["prohibits:email", "required_without:user_id"])
+
+        "Search by user"
+        user_id: ID @eq
+    ): Post @find
+
+    "List multiple posts."
+    posts(
+        "Filters by title. Accepts SQL LIKE wildcards `%` and `_`."
+        title: String @where(operator: "like")
+    ): [Post!]! @paginate(defaultCount: 10) @orderBy(column: created_at, direction: DESC)
+}
+
+"Account of a person who uses this application."
+type User {
+    "Unique primary key."
+    id: ID!
+
+    "Non-unique name."
+    name: String!
+
+    "Unique email address."
+    email: String!
+
+    posts: [Post!]! @hasMany
+
+    "When the email was verified."
+    email_verified_at: DateTime
+
+    "When the account was created."
+    created_at: DateTime!
+
+    "When the account was last updated."
+    updated_at: DateTime!
+}
+
+type Post {
+    "Unique primary key."
+    id: ID!
+
+    "Non-unique title."
+    title: String!
+
+    "Body content"
+    body: String!
+
+    "Owner."
+    user: User! @belongsTo
+
+    "When the post was created."
+    created_at: DateTime!
+
+    "When the post was last updated."
+    updated_at: DateTime!
+}
+
+
+type Mutation {
+    createPost(
+        user_id: ID!
+        title: String! @rules(apply: ["required","string", "min:5"])
+        body: String! @rules(apply: ["required","string", "min:5"])
+    ): Post! @create
+
+    updatePost(
+        id: ID!
+        title: String! @rules(apply: ["required","string", "min:5"])
+        body: String! @rules(apply: ["required","string", "min:5"])
+    ): Post! @update
+
+    deletePost(id: ID! @whereKey): Post! @delete
+}
