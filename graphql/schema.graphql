@@ -27,6 +27,9 @@ type Query {
         user_id: ID @eq
     ): Post @find
 
+    postsResolver: [Post!]!
+    postResolver(id: ID!): Post
+
     "List multiple posts."
     posts(
         "Filters by title. Accepts SQL LIKE wildcards `%` and `_`."
@@ -80,6 +83,12 @@ type Post {
 
 type Mutation {
     createPost(
+        user_id: ID!
+        title: String! @rules(apply: ["required","string", "min:5"])
+        body: String! @rules(apply: ["required","string", "min:5"])
+    ): Post! @create
+
+    createPostResolver(
         user_id: ID!
         title: String! @rules(apply: ["required","string", "min:5"])
         body: String! @rules(apply: ["required","string", "min:5"])
