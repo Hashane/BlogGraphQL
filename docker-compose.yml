@@ -1,0 +1,60 @@
+# File: docker-compose.yml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    image: blog-app:dev
+    container_name: app
+    env_file: .env
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: app
+      DB_USERNAME: app
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+    volumes:
+      - .:/var/www/html:delegated
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    image: blog-nginx:dev
+    container_name: web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html:ro
+    depends_on:
+      - app
+
+  db:
+    image: postgres:16-alpine
+    container_name: db
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432" # optional external port for IDEs
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata: {}
+  redisdata: {}
